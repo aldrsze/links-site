@@ -137,6 +137,7 @@ export function findDuplicates(lines, url, label) {
 
 // builds the new file content; bullet goes in alphabetically (case-insensitive)
 export function plan(text, link, section, description) {
+  if (!section) throw new Error('no section to add the link to');
   const { lines, eol } = splitLines(text);
   const bullet = `- [${link.label}](${link.url}) — ${cleanDescription(description)}`;
   const out = lines.slice();
@@ -157,14 +158,23 @@ export function plan(text, link, section, description) {
       if (at === -1 && lb.toLowerCase() > link.label.toLowerCase()) at = i;
     }
     if (at === -1) {
-      if (last !== -1) at = last + 1;
-      else {
+      if (last !== -1) {
+        at = last + 1;
+      } else {
         at = sec.idx + 1;
-        if (out[at] === '') at++; else out.splice(at, 0, '');
+        if (out[at] !== '') {
+          out.splice(at, 0, '');
+        }
+        at++;
       }
     }
     out.splice(at, 0, bullet);
   }
+  // keep a blank line between the bullet and a heading right below it
+  const next = out[at + 1];
+  if (next !== undefined && next !== '' && next.startsWith('#')) out.splice(at + 1, 0, '');
+  // keep the trailing newline the file already had
+  if (text.endsWith('\n') && out[out.length - 1] !== '') out.push('');
   return { bullet, lines: out, at, text: out.join(eol), dups: findDuplicates(lines, link.url, link.label) };
 }
 
