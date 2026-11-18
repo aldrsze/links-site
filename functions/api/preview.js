@@ -1,10 +1,12 @@
-import {
-  json, checkAuth, normalize, getMeta, askGroq, rawReadme, splitLines,
-  parseSections, plan, renderDiff, cleanDescription, cleanSection
-} from '../_lib/readme.js';
+import { json, checkAuth, rawReadme } from '../_lib/github.js';
+import { normalize, getMeta, cleanDescription, cleanSection } from '../_lib/links.js';
+import { askGroq, askSection } from '../_lib/groq.js';
+import { splitLines, parseSections, plan, renderDiff } from '../_lib/readme.js';
 
-// POST { url, manual?, description?, section? }
+// POST { url, manual?, description?, section?, retry?, retrySection? }
 // first call (url only): fetch page, ask groq, return suggestion + diff
+// retry: ask groq again for description + section
+// retrySection: ask groq for the section only, keeping the description
 // later calls (with description + section): no ai, just recompute the diff
 export async function onRequestPost({ request, env }) {
   try {
@@ -18,7 +20,12 @@ export async function onRequestPost({ request, env }) {
     let section = cleanSection(body.section);
     let ambiguous = false;
 
-    if (!description) {
+    if (body.retrySection) {
+      if (!description) throw new Error('type a description first');
+      const ai = await askSection(env, link, description, sections, !!body.retry);
+      section = ai.section || sections[0];
+      ambiguous = !!ai.ambiguous || !sections.includes(section);
+    } else if (!description) {
       const manual = cleanDescription(body.manual);
       const meta = manual ? { title: '', description: manual } : await getMeta(link, env).catch(e => ({ error: e.message }));
       if (meta.error || !meta.description) {
@@ -26,8 +33,8 @@ export async function onRequestPost({ request, env }) {
       }
       const ai = await askGroq(env, link, meta, sections, !!body.retry);
       description = cleanDescription(ai.description);
-      section = sections.includes(ai.section) ? ai.section : sections[0];
-      ambiguous = !!ai.ambiguous || !sections.includes(ai.section);
+      section = cleanSection(ai.section) || sections[0];
+      ambiguous = !!ai.ambiguous || !sections.includes(section);
     }
     if (!section) section = sections[0];
     if (!description) throw new Error('empty description');

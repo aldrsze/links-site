@@ -1,0 +1,243 @@
+:root {
+  color-scheme: light;
+  --canvas: #f6f8fa;
+  --surface: #ffffff;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --muted: #656d76;
+  --accent: #0969da;
+  --primary: #1f883d;
+  --primary-hover: #1a7f37;
+  --button: #f6f8fa;
+  --button-hover: #eef1f4;
+  --focus: rgba(9, 105, 218, .3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --canvas: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #2f81f7;
+    --primary: #238636;
+    --primary-hover: #2ea043;
+    --button: #21262d;
+    --button-hover: #30363d;
+    --focus: rgba(47, 129, 247, .3);
+  }
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+code, pre, .mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.topbar {
+  background: var(--canvas);
+  border-bottom: 1px solid var(--border);
+}
+
+.wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.topbar .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.brand {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tagline {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+main.wrap {
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* every card is a simple stack, one gap size, nothing between */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.card + .card,
+.card + #status,
+#status + .card {
+  margin-top: 16px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field input,
+.field select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+#url { flex: 1 1 320px; }
+
+input,
+select,
+button {
+  font: inherit;
+  color: var(--text);
+}
+
+input,
+select {
+  height: 32px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+input[readonly] {
+  background: var(--canvas);
+  color: var(--muted);
+}
+
+select { padding-right: 32px; }
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+button {
+  height: 32px;
+  padding: 0 12px;
+  background: var(--button);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+button:hover { background: var(--button-hover); }
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+button.primary {
+  color: #ffffff;
+  background: var(--primary);
+  border-color: transparent;
+}
+
+button.primary:hover:not(:disabled) { background: var(--primary-hover); }
+
+button.small {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+#status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#status:empty { display: none; }
+
+pre.code {
+  margin: 0;
+  padding: 12px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#list {
+  max-height: 420px;
+  overflow: auto;
+}
+
+@media (max-width: 480px) {
+  .wrap { padding-left: 12px; padding-right: 12px; }
+  main.wrap { padding-top: 16px; }
+  .card { padding: 12px; }
+  .card .row button { flex: 1 1 auto; }
+}

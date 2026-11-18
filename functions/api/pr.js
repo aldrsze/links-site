@@ -1,4 +1,6 @@
-import { json, checkAuth, cfg, gh, normalize, plan, cleanDescription, cleanSection, unb64 } from '../_lib/readme.js';
+import { json, checkAuth, cfg, gh, unb64 } from '../_lib/github.js';
+import { normalize, cleanDescription, cleanSection } from '../_lib/links.js';
+import { plan } from '../_lib/readme.js';
 
 const b64 = s => {
   let bin = '';

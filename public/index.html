@@ -4,140 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>links</title>
+<link rel="stylesheet" href="/style.css">
+<script type="module" src="/app.js"></script>
 </head>
 <body>
 
-<h3>add link</h3>
-<div>
-  <input id="url" size="60" placeholder="https://github.com/owner/repo or any url">
-  <button id="check">check</button><br>
-  <label>password <input id="pw" type="password" size="20"></label>
-  <label>description (only if the page has none) <input id="manual" size="40"></label>
-</div>
-
-<pre id="status"></pre>
-
-<div id="review" hidden>
-  <h3>review</h3>
-  <div>
-    <label>section <select id="section"></select></label>
-    <label>or new section <input id="newSection" size="20"></label>
+<header class="topbar">
+  <div class="wrap">
+    <span class="brand">links</span>
+    <span class="tagline">repos worth finding again</span>
   </div>
-  <div>
-    <label>link <input id="label" size="40" readonly></label><br>
-    <label>description <input id="desc" size="80"></label>
-    <button id="retry">retry description</button>
-  </div>
-  <pre id="bullet"></pre>
-  <pre id="diff"></pre>
-  <button id="pr">create pull request</button>
-  <button id="cancel">cancel</button>
-</div>
+</header>
 
-<h3>list</h3>
-<button id="reload">reload</button>
-<pre id="list"></pre>
+<main class="wrap">
 
-<script>
-const $ = id => document.getElementById(id);
-const RAW = 'https://raw.githubusercontent.com/aldrsze/links/main/README.md';
-let link = null;
+  <section class="card">
+    <h2>add link</h2>
+    <div class="row">
+      <input id="url" placeholder="https://github.com/owner/repo or any url">
+      <button id="check" class="primary">check</button>
+    </div>
+    <div class="grid">
+      <label class="field">password <input id="pw" type="password"></label>
+      <label class="field">description (only if the page has none) <input id="manual"></label>
+    </div>
+  </section>
 
-const say = m => { $('status').textContent = m; };
-const section = () => $('newSection').value.trim() || $('section').value;
+  <pre id="status"></pre>
 
-async function api(path, body) {
-  const r = await fetch(path, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-password': $('pw').value },
-    body: JSON.stringify(body)
-  });
-  const j = await r.json().catch(() => ({ error: 'bad response ' + r.status }));
-  if (!r.ok) throw Object.assign(new Error(j.error || r.status), { data: j });
-  return j;
-}
+  <section id="review" class="card" hidden>
+    <h2>review</h2>
+    <div class="grid">
+      <label class="field">section <select id="section"></select></label>
+      <label class="field">or new section <input id="newSection"></label>
+    </div>
+    <label class="field">link <input id="label" readonly></label>
+    <label class="field">description <input id="desc"></label>
+    <div class="row">
+      <button id="retry">retry description</button>
+      <button id="retrySection">retry section</button>
+    </div>
+    <pre id="bullet" class="code"></pre>
+    <pre id="diff" class="code"></pre>
+    <div class="row actions">
+      <button id="pr" class="primary">create pull request</button>
+      <button id="cancel">cancel</button>
+    </div>
+  </section>
 
-function show(j) {
-  link = j.link;
-  $('label').value = j.link.label;
-  $('desc').value = j.description;
-  $('section').innerHTML = j.sections.map(s => `<option></option>`).join('');
-  [...$('section').options].forEach((o, i) => { o.textContent = o.value = j.sections[i]; });
-  $('section').value = j.section;
-  $('newSection').value = j.sections.includes(j.section) ? '' : j.section;
-  paint(j);
-  $('review').hidden = false;
-}
-function paint(j) {
-  $('bullet').textContent = j.bullet;
-  $('diff').textContent = 'section: ' + j.section + '\n\n' + j.diff;
-  let msg = j.ambiguous ? 'ai flagged the section as ambiguous. check it.\n' : '';
-  if (j.duplicates.length) {
-    msg += 'already listed:\n' + j.duplicates.map(d => `  [${d.section}] ${d.line}`).join('\n') + '\n';
-    msg += j.blocked ? 'same section: the pull request will be refused.' : 'other section only: allowed.';
-  }
-  say(msg || 'check the line, then create the pull request.');
-  $('pr').disabled = j.blocked;
-}
+  <section class="card">
+    <div class="card-head">
+      <h2>list</h2>
+      <button id="reload" class="small">reload</button>
+    </div>
+    <pre id="list" class="code"></pre>
+  </section>
 
-$('check').onclick = async () => {
-  $('review').hidden = true;
-  try {
-    say('checking...');
-    show(await api('/api/preview', { url: $('url').value, manual: $('manual').value }));
-  } catch (e) { say('error: ' + e.message); }
-};
+</main>
 
-// editing description or section only recomputes the diff, no ai call
-async function refresh() {
-  if (!link) return;
-  if (!$('desc').value.trim()) {
-    $('pr').disabled = true;
-    say('type a description first.');
-    return;
-  }
-  try {
-    const j = await api('/api/preview', { url: link.url, description: $('desc').value, section: section() });
-    paint(j);
-  } catch (e) {
-    $('pr').disabled = true;
-    say('error: ' + e.message);
-  }
-}
-$('section').onchange = () => { $('newSection').value = ''; refresh(); };
-$('newSection').onchange = refresh;
-$('desc').onchange = refresh;
-
-// same as the first check: fetch the page again and ask the model for a new line
-$('retry').onclick = async () => {
-  if (!link) return;
-  try {
-    say('writing description...');
-    show(await api('/api/preview', { url: link.url, retry: true }));
-  } catch (e) { say('error: ' + e.message); }
-};
-
-$('pr').onclick = async () => {
-  try {
-    say('creating pull request...');
-    const j = await api('/api/pr', { url: link.url, description: $('desc').value, section: section() });
-    say('pull request #' + j.number + ': ' + j.url);
-    $('review').hidden = true;
-    link = null;
-    $('url').value = '';
-    $('manual').value = '';
-  } catch (e) { say('error: ' + e.message); }
-};
-$('cancel').onclick = () => { $('review').hidden = true; link = null; say(''); };
-
-async function loadList() {
-  try {
-    const r = await fetch(RAW, { cache: 'no-store' });
-    $('list').textContent = r.ok ? await r.text() : 'error: ' + r.status;
-  } catch (e) { $('list').textContent = 'error: ' + e.message; }
-}
-$('reload').onclick = loadList;
-loadList();
-</script>
 </body>
 </html>
