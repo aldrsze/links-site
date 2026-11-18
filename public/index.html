@@ -4,52 +4,51 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>links</title>
+<meta name="theme-color" content="#0969da">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script type="module" src="/app.js"></script>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="wrap">
-    <span class="brand">
-      <svg class="brand-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-        <path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25Zm9.365 7.19a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 1 1-2.83-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25Z"/>
-      </svg>
-      links
-    </span>
-    <span class="tagline">repos worth finding again</span>
-  </div>
-</header>
-
 <main class="wrap">
 
-  <section class="card">
-    <h2>Add a link</h2>
+  <header class="top">
+    <span class="brand">
+      <img src="/favicon.svg" width="22" height="22" alt="">
+      links
+    </span>
+    <label class="pwbox" title="Saved in this browser only">
+      <span class="sr">Password</span>
+      <input id="pw" type="password" placeholder="password" autocomplete="current-password">
+    </label>
+  </header>
+
+  <section class="add">
     <div class="row">
-      <input id="url" placeholder="https://github.com/owner/repo or any url" autofocus>
+      <input id="url" type="url" inputmode="url" placeholder="Paste a link" autocomplete="off" autofocus>
       <button id="check" class="primary">Check</button>
     </div>
-    <p class="hint">Paste a repo or page. Check fetches it and drafts the line.</p>
-    <div class="grid">
-      <label class="field">Password <input id="pw" type="password"></label>
-      <label class="field">Description, if the page has none <input id="manual" placeholder="one plain line"></label>
-    </div>
+    <label id="manualField" class="field" hidden>
+      This page has no description. Write one line
+      <input id="manual" placeholder="one plain line">
+    </label>
   </section>
 
   <pre id="status" aria-live="polite"></pre>
 
   <section id="review" class="card" hidden>
-    <h2>Review</h2>
     <div class="grid">
       <label class="field">Section <select id="section"></select></label>
       <label class="field">Or a new section <input id="newSection" placeholder="type a name"></label>
     </div>
     <label class="field">Link <input id="label" readonly></label>
     <label class="field">Description <input id="desc"></label>
-    <div class="row">
-      <button id="retry">Rewrite description</button>
-      <button id="retrySection">Choose section again</button>
+    <div class="row quiet">
+      <button id="retry" class="link">Rewrite description</button>
+      <button id="retrySection" class="link">Choose section again</button>
     </div>
     <pre id="bullet" class="code"></pre>
     <pre id="diff" class="code"></pre>
@@ -59,13 +58,13 @@
     </div>
   </section>
 
-  <section class="card">
-    <div class="card-head">
-      <h2>Current list</h2>
+  <details class="list" open>
+    <summary>Current list</summary>
+    <div class="list-body">
+      <pre id="list" class="code">Loading the list...</pre>
       <button id="reload" class="small">Reload</button>
     </div>
-    <pre id="list" class="code">Loading the list...</pre>
-  </section>
+  </details>
 
 </main>
 

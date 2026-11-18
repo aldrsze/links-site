@@ -5,6 +5,12 @@ let link = null;
 const say = m => { $('status').textContent = m; };
 const section = () => $('newSection').value.trim() || $('section').value;
 
+// remember the password in this browser so it is one less thing to type
+try { $('pw').value = localStorage.getItem('links-pw') || ''; } catch {}
+$('pw').addEventListener('change', () => {
+  try { localStorage.setItem('links-pw', $('pw').value); } catch {}
+});
+
 async function api(path, body) {
   const r = await fetch(path, {
     method: 'POST',
@@ -32,6 +38,7 @@ function show(j) {
   }
   paint(j);
   $('review').hidden = false;
+  $('manualField').hidden = true;
 }
 
 function paintDiff(j, isNew) {
@@ -76,10 +83,20 @@ $('check').onclick = async () => {
     show(await api('/api/preview', { url: $('url').value, manual: $('manual').value }));
   } catch (e) {
     say('Error: ' + e.message);
-    if (e.data && e.data.needManual) $('manual').focus();
+    if (e.data && e.data.needManual) {
+      $('manualField').hidden = false;
+      $('manual').focus();
+    }
   }
   $('check').disabled = false;
 };
+
+// pasting a link starts the check right away
+$('url').addEventListener('paste', () => {
+  setTimeout(() => {
+    if (/^https?:\/\//i.test($('url').value.trim()) && !$('check').disabled) $('check').click();
+  }, 0);
+});
 
 // editing description or section only recomputes the diff, no ai call
 async function refresh() {
@@ -137,22 +154,45 @@ $('pr').onclick = async () => {
   say('Opening a pull request...');
   try {
     const j = await api('/api/pr', { url: link.url, description: $('desc').value, section: section() });
-    say('Pull request #' + j.number + ' opened: ' + j.url);
+    // make the pull request address clickable
+    const st = $('status');
+    st.textContent = 'Pull request #' + j.number + ' opened: ';
+    const a = document.createElement('a');
+    a.href = j.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = j.url;
+    st.appendChild(a);
     $('review').hidden = true;
     link = null;
     $('url').value = '';
     $('manual').value = '';
+    $('manualField').hidden = true;
+    $('url').focus();
   } catch (e) {
     say('Error: ' + e.message);
     $('pr').disabled = false;
   }
 };
-$('cancel').onclick = () => { $('review').hidden = true; link = null; say(''); };
+$('cancel').onclick = () => {
+  $('review').hidden = true;
+  link = null;
+  say('');
+  $('url').focus();
+};
+
+// ctrl/cmd+enter creates the pull request when the review is open
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !$('review').hidden && !$('pr').disabled) {
+    e.preventDefault();
+    $('pr').click();
+  }
+});
 
 // typing a new section and pressing enter is the same as leaving the box
 for (const id of ['desc', 'newSection']) {
   $(id).addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       refresh();
     }
