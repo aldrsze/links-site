@@ -1,11 +1,10 @@
-import { json, checkAuth, cfg, gh, normalize, plan, cleanDescription, cleanSection } from '../_lib/readme.js';
+import { json, checkAuth, cfg, gh, normalize, plan, cleanDescription, cleanSection, unb64 } from '../_lib/readme.js';
 
 const b64 = s => {
   let bin = '';
   for (const b of new TextEncoder().encode(s)) bin += String.fromCharCode(b);
   return btoa(bin);
 };
-const unb64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, '')), c => c.charCodeAt(0)));
 
 // POST { url, description, section }
 // label and url are rebuilt server side; the browser never sends the bullet itself

@@ -43,6 +43,9 @@ export const cleanDescription = s =>
 export const cleanSection = s =>
   String(s || '').replace(/[\r\n#]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
 
+export const unb64 = s =>
+  new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, '')), c => c.charCodeAt(0)));
+
 // ---------- page metadata (server side, so no CORS problem) ----------
 function decode(s) {
   return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
@@ -207,8 +210,10 @@ export const gh = (env, path, init = {}) =>
   });
 
 export async function rawReadme(env) {
+  if (!env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not set');
   const c = cfg(env);
-  const r = await fetch(`https://raw.githubusercontent.com/${c.repo}/${c.branch}/${c.file}`, { cf: { cacheTtl: 0 } });
+  const r = await gh(env, `/repos/${c.repo}/contents/${c.file}?ref=${c.branch}`);
   if (!r.ok) throw new Error('could not read the repo file: ' + r.status);
-  return r.text();
+  const j = await r.json();
+  return unb64(j.content);
 }
