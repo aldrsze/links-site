@@ -24,7 +24,7 @@ export async function onRequestPost({ request, env }) {
       if (meta.error || !meta.description) {
         return json({ needManual: true, error: (meta.error || 'page has no description') + '. type a one-line description and try again.' }, 422);
       }
-      const ai = await askGroq(env, link, meta, sections);
+      const ai = await askGroq(env, link, meta, sections, !!body.retry);
       description = cleanDescription(ai.description);
       section = sections.includes(ai.section) ? ai.section : sections[0];
       ambiguous = !!ai.ambiguous || !sections.includes(ai.section);

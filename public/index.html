@@ -26,6 +26,7 @@
   <div>
     <label>link <input id="label" size="40" readonly></label><br>
     <label>description <input id="desc" size="80"></label>
+    <button id="retry">retry description</button>
   </div>
   <pre id="bullet"></pre>
   <pre id="diff"></pre>
@@ -106,6 +107,15 @@ async function refresh() {
 $('section').onchange = () => { $('newSection').value = ''; refresh(); };
 $('newSection').onchange = refresh;
 $('desc').onchange = refresh;
+
+// same as the first check: fetch the page again and ask the model for a new line
+$('retry').onclick = async () => {
+  if (!link) return;
+  try {
+    say('writing description...');
+    show(await api('/api/preview', { url: link.url, retry: true }));
+  } catch (e) { say('error: ' + e.message); }
+};
 
 $('pr').onclick = async () => {
   try {

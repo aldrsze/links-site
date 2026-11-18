@@ -84,7 +84,8 @@ export async function getMeta(link, env) {
 }
 
 // ---------- groq ----------
-export async function askGroq(env, link, meta, sections) {
+// retry raises the temperature so a second try is not the same line again
+export async function askGroq(env, link, meta, sections, retry = false) {
   if (!env.GROQ_API_KEY) throw new Error('GROQ_API_KEY is not set');
   const system = [
     'You write one-line entries for a personal links list.',
@@ -105,7 +106,7 @@ export async function askGroq(env, link, meta, sections) {
     headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env.GROQ_API_KEY },
     body: JSON.stringify({
       model: cfg(env).model,
-      temperature: 0,
+      temperature: retry ? 0.7 : 0,
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }]
     })
