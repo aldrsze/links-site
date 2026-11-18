@@ -21,14 +21,14 @@ function sectionEnd(lines, start) {
   return lines.length;
 }
 
-const bulletLabel = line => (line.match(/^- \[([^\]]+)\]/) || [])[1] ?? null;
+const bulletLabel = line => (line.match(/^\*\*\[([^\]]+)\]\(/) || [])[1] ?? null;
 
 export function findDuplicates(lines, url, label) {
   const secs = parseSections(lines);
   const hits = [];
   lines.forEach((l, i) => {
-    if (!l.startsWith('- [')) return;
-    if (l.includes(`](${url})`) || (bulletLabel(l) || '').toLowerCase() === label.toLowerCase()) {
+    if (!l.startsWith('**[')) return;
+    if (l.includes(`](${url})**)`) || (bulletLabel(l) || '').toLowerCase() === label.toLowerCase()) {
       let sec = '';
       for (const s of secs) if (s.idx < i) sec = s.name;
       hits.push({ line: l, section: sec });
@@ -37,11 +37,11 @@ export function findDuplicates(lines, url, label) {
   return hits;
 }
 
-// builds the new file content; bullet goes in alphabetically (case-insensitive)
+// **[name](url)** - description. on its own paragraph, alphabetical by name
 export function plan(text, link, section, description) {
   if (!section) throw new Error('no section to add the link to');
   const { lines, eol } = splitLines(text);
-  const bullet = `- [${link.label}](${link.url}) — ${cleanDescription(description)}`;
+  const bullet = `**[${link.label}](${link.url})** - ${cleanDescription(description)}.`;
   const out = lines.slice();
   const sec = parseSections(out).find(s => s.name === section);
   let at;
@@ -59,22 +59,15 @@ export function plan(text, link, section, description) {
       last = i;
       if (at === -1 && lb.toLowerCase() > link.label.toLowerCase()) at = i;
     }
-    if (at === -1) {
-      if (last !== -1) {
-        at = last + 1;
-      } else {
-        at = sec.idx + 1;
-        if (out[at] !== '') {
-          out.splice(at, 0, '');
-        }
-        at++;
-      }
+    if (at === -1) at = last !== -1 ? last + 1 : sec.idx + 1;
+    // each entry is its own paragraph, so keep one blank line above and below it
+    if (out[at - 1] !== '') {
+      out.splice(at, 0, '');
+      at++;
     }
     out.splice(at, 0, bullet);
+    if (out[at + 1] !== undefined && out[at + 1] !== '') out.splice(at + 1, 0, '');
   }
-  // keep a blank line between the bullet and a heading right below it
-  const next = out[at + 1];
-  if (next !== undefined && next !== '' && next.startsWith('#')) out.splice(at + 1, 0, '');
   // keep the trailing newline the file already had
   if (text.endsWith('\n') && out[out.length - 1] !== '') out.push('');
   return { bullet, lines: out, at, text: out.join(eol), dups: findDuplicates(lines, link.url, link.label) };
