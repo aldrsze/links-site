@@ -60,5 +60,18 @@ export async function getMeta(link, env) {
     if (!fallback && /name=["']description["']/i.test(tag)) fallback = decode(c[1]);
   }
   if (!description) description = fallback;
+  // many docs and wiki pages have no meta description at all, use the intro paragraph
+  if (!description) description = firstParagraph(html);
   return { title, description };
+}
+
+// the first paragraph with real prose, so a wiki page still gives the model something
+function firstParagraph(html) {
+  const body = html.replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ');
+  for (const p of body.match(/<p\b[^>]*>[\s\S]*?<\/p>/gi) || []) {
+    const text = decode(p.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+    if (text.length >= 60) return text.slice(0, 400);
+  }
+  return '';
 }
