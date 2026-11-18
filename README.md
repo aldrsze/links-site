@@ -1,58 +1,51 @@
-# links site
+# trove
 
-Adds one entry to [aldrsze/links](https://github.com/aldrsze/links) without touching git.
+Paste a link, review the draft line, and open a pull request against [`aldrsze/links`](https://github.com/aldrsze/links). No git needed.
 
-Paste a link -> the page is fetched server side -> Groq writes the description and picks the section -> you review the diff -> the worker opens a pull request.
+## How it works
+
+1. Paste a URL. The server fetches the page.
+2. Groq writes a one-line description and picks a section.
+3. You check the diff and edit if needed.
+4. The worker opens the pull request.
 
 ## Run locally
 
-```
+```sh
 npx wrangler pages dev public
 ```
 
-Secrets go in `.dev.vars`, same names as below. The file is not tracked.
+Put secrets in an untracked `.dev.vars` file.
 
-## Files
+## Layout
 
-- `public/index.html` markup
-- `public/style.css` theme, light and dark
-- `public/app.js` form logic and api calls
-- `public/favicon.svg` link glyph
-- `functions/api/preview.js` reads the readme, builds the diff
-- `functions/api/pr.js` creates the branch, commit, pull request
-- `functions/_lib/links.js` url normalization, page metadata
-- `functions/_lib/groq.js` prompts and the groq call
-- `functions/_lib/readme.js` markdown parsing, plan, diff
-- `functions/_lib/github.js` config, auth, github api
+```
+public/              static front end
+functions/api/       preview and pr endpoints
+functions/_lib/      url handling, prompts, readme parsing, diff, github auth
+```
 
-## Endpoints
+## API
 
-`POST /api/preview`, body `{ url, manual?, description?, section?, retry?, retrySection? }`
+| Endpoint | Does |
+| --- | --- |
+| `POST /api/preview` | Drafts a description and section for a URL. Also regenerates either one, or rebuilds the diff from your edits without calling the model. |
+| `POST /api/pr` | Rechecks the file, rejects duplicates in the same section (409), then creates the branch and pull request. |
 
-- url only: fetch the page, ask groq for a line and a section
-- `retry: true`: ask again for the description at a higher temperature
-- `retrySection: true` plus a description: ask for the section only
-- description plus section: no ai, just rebuild the diff
+## Notes
 
-Returns `link`, `description`, `section`, `sections`, `ambiguous`, `bullet`, `diff`, `duplicates`, `blocked`.
-
-`POST /api/pr`, body `{ url, description, section }`, returns `{ url, number }`. It reads the file fresh, refuses a duplicate in the same section with 409, then pushes a branch and opens the pull request.
-
-## Sections
-
-The model picks an existing section when one clearly fits. Otherwise it invents a name of one to three words. A duplicate in the same section blocks the pull request; a duplicate in another section is allowed.
-
-## Rate limits
-
-A 429 from Groq becomes `Rate limit reached, try again in Ns`, read from `retry-after` or `x-ratelimit-reset`. Nothing is retried automatically.
+- The model reuses an existing section when one fits, otherwise it proposes a new one (one to three words).
+- A link may appear in several sections, but not twice in the same one.
+- Groq rate limits (429) are shown with a wait time. Nothing retries automatically.
 
 ## Deploy
 
-Cloudflare Pages, build command empty, output directory `public`.
+Cloudflare Pages, output directory `public`.
 
-Secrets:
-- `GROQ_API_KEY`
-- `GITHUB_TOKEN` fine-grained, `aldrsze/links` only, Contents RW + Pull requests RW
-- `SITE_PASSWORD` optional, the page sends it as `x-password`
+| Setting | |
+| --- | --- |
+| `GROQ_API_KEY` | secret, required |
+| `GITHUB_TOKEN` | secret, required |
+| `SITE_PASSWORD` | secret, optional |
 
-Plain variables: `REPO` (`aldrsze/links`), `BRANCH` (`main`), `FILE` (`README.md`), `GROQ_MODEL` (`openai/gpt-oss-120b`).
+Repo, branch, file and model are set with variables. Check `functions/` for their names.
