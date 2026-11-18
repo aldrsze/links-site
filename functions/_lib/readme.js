@@ -21,7 +21,9 @@ export function normalize(raw) {
   const u = new URL(String(raw).trim());
   if (!/^https?:$/.test(u.protocol)) throw new Error('only http(s) links');
   const host = u.hostname.replace(/^www\./, '');
-  if (/^(localhost$|127\.|10\.|192\.168\.|0\.0\.0\.0|\[)/.test(host) || !host.includes('.')) {
+  const isPrivate = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|0\.0\.0\.0|\[)/.test(host)
+    || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+  if (isPrivate || !host.includes('.')) {
     throw new Error('not a public host');
   }
   if (host === 'github.com') {
