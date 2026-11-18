@@ -4,7 +4,7 @@ export const cfg = env => ({
   repo: env.REPO || 'aldrsze/links',
   branch: env.BRANCH || 'main',
   file: env.FILE || 'README.md',
-  model: env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+  model: env.GROQ_MODEL || 'openai/gpt-oss-120b'
 });
 
 export const json = (obj, status = 200) =>
