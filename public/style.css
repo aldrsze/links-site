@@ -249,6 +249,24 @@ pre.code {
   overflow: auto;
 }
 
+.diff-head {
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.diff-line,
+.diff-add {
+  white-space: pre-wrap;
+}
+
+.diff-add {
+  background: rgba(26, 127, 55, .12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .diff-add { background: rgba(46, 160, 67, .18); }
+}
+
 @media (max-width: 480px) {
   .wrap { padding-left: 12px; padding-right: 12px; }
   main.wrap { padding-top: 16px; }

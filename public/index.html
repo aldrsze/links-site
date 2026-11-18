@@ -27,7 +27,7 @@
   <section class="card">
     <h2>Add a link</h2>
     <div class="row">
-      <input id="url" placeholder="https://github.com/owner/repo or any url">
+      <input id="url" placeholder="https://github.com/owner/repo or any url" autofocus>
       <button id="check" class="primary">Check</button>
     </div>
     <p class="hint">Paste a repo or page. Check fetches it and drafts the line.</p>
@@ -37,7 +37,7 @@
     </div>
   </section>
 
-  <pre id="status"></pre>
+  <pre id="status" aria-live="polite"></pre>
 
   <section id="review" class="card" hidden>
     <h2>Review</h2>
