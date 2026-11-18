@@ -1,5 +1,6 @@
 # links site
 
+- [github.com](https://github.com) — code hosting platform for collaborative development projects
 Paste a link -> page fetched server side -> Groq writes the description and picks the section -> review -> pull request on aldrsze/links.
 
 Cloudflare Pages: build command empty, output directory `public`.
