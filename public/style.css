@@ -67,8 +67,22 @@ code, pre, .mono {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 16px;
   font-weight: 600;
+}
+
+.brand-icon {
+  flex: none;
+  fill: var(--accent);
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .tagline {

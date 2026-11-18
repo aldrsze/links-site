@@ -38,22 +38,22 @@ function paint(j) {
   const isNew = !j.sections.includes(j.section);
   $('bullet').textContent = j.bullet;
   $('diff').textContent = 'section: ' + j.section + (isNew ? ' (new)' : '') + '\n\n' + j.diff;
-  let msg = isNew ? 'ai made a new section. rename it if you want, then check the diff.\n' : '';
-  if (j.ambiguous) msg += 'ai flagged the section as ambiguous. check it.\n';
+  let msg = isNew ? 'The model made a new section. Rename it above if you like, then check the diff.\n' : '';
+  if (j.ambiguous) msg += 'Two sections could fit. Pick one above.\n';
   if (j.duplicates.length) {
-    msg += 'already listed:\n' + j.duplicates.map(d => `  [${d.section}] ${d.line}`).join('\n') + '\n';
-    msg += j.blocked ? 'same section: the pull request will be refused.' : 'other section only: allowed.';
+    msg += 'Already listed:\n' + j.duplicates.map(d => `  [${d.section}] ${d.line}`).join('\n') + '\n';
+    msg += j.blocked ? 'It is in this section. Pick another one.' : 'It is in another section, so this is allowed.';
   }
-  say(msg || 'check the line, then create the pull request.');
+  say(msg || 'Looks right? Create the pull request.');
   $('pr').disabled = j.blocked;
 }
 
 $('check').onclick = async () => {
   $('review').hidden = true;
   try {
-    say('checking...');
+    say('Checking the link...');
     show(await api('/api/preview', { url: $('url').value, manual: $('manual').value }));
-  } catch (e) { say('error: ' + e.message); }
+  } catch (e) { say('Error: ' + e.message); }
 };
 
 // editing description or section only recomputes the diff, no ai call
@@ -61,7 +61,7 @@ async function refresh() {
   if (!link) return;
   if (!$('desc').value.trim()) {
     $('pr').disabled = true;
-    say('type a description first.');
+    say('Add a description first.');
     return;
   }
   try {
@@ -69,7 +69,7 @@ async function refresh() {
     paint(j);
   } catch (e) {
     $('pr').disabled = true;
-    say('error: ' + e.message);
+    say('Error: ' + e.message);
   }
 }
 $('section').onchange = () => { $('newSection').value = ''; refresh(); };
@@ -80,46 +80,54 @@ $('desc').onchange = refresh;
 $('retry').onclick = async () => {
   if (!link) return;
   try {
-    say('writing description...');
-    show(await api('/api/preview', { url: link.url, retry: true }));
-  } catch (e) { say('error: ' + e.message); }
+    say('Writing a description...');
+    const j = await api('/api/preview', { url: link.url, retry: true });
+    show(j);
+  } catch (e) { say('Error: ' + e.message); }
 };
 
 // asks the model for the section again, the description you see stays
 $('retrySection').onclick = async () => {
   if (!link) return;
   if (!$('desc').value.trim()) {
-    say('type a description first.');
+    say('Add a description first.');
     return;
   }
   try {
-    say('picking a section...');
+    say('Choosing a section...');
     const old = section();
     const j = await api('/api/preview', { url: link.url, description: $('desc').value, retrySection: true });
     show(j);
     // the ai is allowed to say "no better section", tell it plainly
-    if (j.section === old) say('ai picked "' + j.section + '" again. type a new section yourself if it is wrong.');
-  } catch (e) { say('error: ' + e.message); }
+    if (j.section === old) say('The model chose "' + j.section + '" again. Type a new section above if that is wrong.');
+  } catch (e) { say('Error: ' + e.message); }
 };
 
 $('pr').onclick = async () => {
   try {
-    say('creating pull request...');
+    say('Opening a pull request...');
     const j = await api('/api/pr', { url: link.url, description: $('desc').value, section: section() });
-    say('pull request #' + j.number + ': ' + j.url);
+    say('Pull request #' + j.number + ' opened: ' + j.url);
     $('review').hidden = true;
     link = null;
     $('url').value = '';
     $('manual').value = '';
-  } catch (e) { say('error: ' + e.message); }
+  } catch (e) { say('Error: ' + e.message); }
 };
 $('cancel').onclick = () => { $('review').hidden = true; link = null; say(''); };
 
 async function loadList() {
   try {
     const r = await fetch(RAW, { cache: 'no-store' });
-    $('list').textContent = r.ok ? await r.text() : 'error: ' + r.status;
-  } catch (e) { $('list').textContent = 'error: ' + e.message; }
+    if (!r.ok) {
+      $('list').textContent = 'Could not load the list. Reload to try again. (' + r.status + ')';
+      return;
+    }
+    const text = await r.text();
+    $('list').textContent = text.trim() ? text : 'The list is empty.';
+  } catch (e) {
+    $('list').textContent = 'Could not load the list. Reload to try again.';
+  }
 }
 $('reload').onclick = loadList;
 loadList();
