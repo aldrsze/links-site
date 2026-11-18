@@ -64,13 +64,19 @@ export async function getMeta(link, env) {
   if (!r.ok) throw new Error('page fetch failed: ' + r.status);
   const html = (await r.text()).slice(0, 300000);
   const title = decode((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '');
+  // og:description is usually the hand-written one, name=description is often templated
   let description = '';
+  let fallback = '';
   for (const tag of html.match(/<meta\b[^>]*>/gi) || []) {
-    if (/(name|property)=["'](description|og:description)["']/i.test(tag)) {
-      const c = tag.match(/content=["']([\s\S]*?)["']/i);
-      if (c && c[1].trim()) { description = decode(c[1]); break; }
+    const c = tag.match(/content=["']([\s\S]*?)["']/i);
+    if (!c || !c[1].trim()) continue;
+    if (/property=["']og:description["']/i.test(tag)) {
+      description = decode(c[1]);
+      break;
     }
+    if (!fallback && /name=["']description["']/i.test(tag)) fallback = decode(c[1]);
   }
+  if (!description) description = fallback;
   return { title, description };
 }
 
@@ -80,10 +86,15 @@ export async function askGroq(env, link, meta, sections) {
   const system = [
     'You write one-line entries for a personal links list.',
     'Reply with JSON only: {"description": string, "section": string, "ambiguous": boolean}.',
-    'description: about eight words, keep the concrete noun, drop marketing words, lowercase unless it starts with a proper name, no trailing period.',
+    'description: one line, 6 to 12 words, lowercase unless it starts with a proper name, no trailing period.',
+    'Say what the thing does or gives you, not what it is called; the name is already the link text.',
+    'Keep the concrete noun: repo, CLI, wiki, emulator, cheatsheets, config, index.',
+    'Drop marketing words: powerful, modern, fast, simple, seamless, blazing, ultimate, cutting-edge, robust, lovely.',
+    'Drop filler openers: "a tool that", "this site", "a collection of". No hype, no comparisons, no calls to action.',
+    'Use only facts from the input. If the source description is thin, name the category instead of inventing features.',
+    'Style examples: "curated index of free media, tools, and sites", "vim fork focused on extensibility", "terminal UI for git", "resources for anime, manga, and novels".',
     'section: exactly one of the provided section names, chosen by what the thing does, not what it is built with.',
-    'If two sections fit or none fits, set ambiguous to true and still give your best section.',
-    'Do not invent facts that are not in the input.'
+    'If two sections fit or none fits, set ambiguous to true and still give your best section.'
   ].join(' ');
   const user = JSON.stringify({ link: link.url, title: meta.title, source_description: meta.description, sections });
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
