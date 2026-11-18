@@ -279,6 +279,14 @@ pre#bullet:empty { display: none; }
 
 .list-body pre { width: 100%; }
 
+.list-body .repo {
+  color: var(--accent);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.list-body .repo:hover { text-decoration: underline; }
+
 #list {
   max-height: 420px;
   overflow: auto;
