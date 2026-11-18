@@ -2,6 +2,15 @@
 import { cfg } from './github.js';
 import { cleanSection } from './links.js';
 
+// the wait in seconds, from whichever header groq sends
+function rateLimitSeconds(r) {
+  const after = r.headers.get('retry-after');
+  if (after && !isNaN(Number(after))) return Math.max(0, Math.ceil(Number(after)));
+  const reset = r.headers.get('x-ratelimit-reset');
+  if (reset && !isNaN(Number(reset))) return Math.max(0, Math.ceil(Number(reset) - Date.now() / 1000));
+  return null;
+}
+
 // retry raises the temperature so a second try is not the same line again
 async function groqChat(env, system, user, retry) {
   if (!env.GROQ_API_KEY) throw new Error('GROQ_API_KEY is not set');
@@ -15,6 +24,11 @@ async function groqChat(env, system, user, retry) {
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }]
     })
   });
+  if (r.status === 429) {
+    const wait = rateLimitSeconds(r);
+    const msg = wait === null ? 'Rate limit reached, try again later' : 'Rate limit reached, try again in ' + wait + 's';
+    throw Object.assign(new Error(msg), { status: 429 });
+  }
   if (!r.ok) throw new Error(`groq failed: ${r.status} ${await r.text()}`);
   const j = await r.json();
   return JSON.parse(j.choices[0].message.content);
