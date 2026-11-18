@@ -90,10 +90,18 @@ $('check').onclick = async () => {
 // editing description or section only recomputes the diff, no ai call
 async function refresh() {
   if (!link) return;
+  if (!$('desc').value.trim()) {
+    $('pr').disabled = true;
+    say('type a description first.');
+    return;
+  }
   try {
     const j = await api('/api/preview', { url: link.url, description: $('desc').value, section: section() });
     paint(j);
-  } catch (e) { say('error: ' + e.message); }
+  } catch (e) {
+    $('pr').disabled = true;
+    say('error: ' + e.message);
+  }
 }
 $('section').onchange = () => { $('newSection').value = ''; refresh(); };
 $('newSection').onchange = refresh;
