@@ -23,7 +23,7 @@ export const gh = (env, path, init = {}) =>
   fetch('https://api.github.com' + path, {
     ...init,
     headers: {
-      'user-agent': 'links-site',
+      'user-agent': 'trove',
       accept: 'application/vnd.github+json',
       authorization: 'Bearer ' + env.GITHUB_TOKEN,
       ...(init.body ? { 'content-type': 'application/json' } : {})

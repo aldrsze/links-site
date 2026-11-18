@@ -6,9 +6,9 @@ const say = m => { $('status').textContent = m; };
 const section = () => $('newSection').value.trim() || $('section').value;
 
 // remember the password in this browser so it is one less thing to type
-try { $('pw').value = localStorage.getItem('links-pw') || ''; } catch {}
+try { $('pw').value = localStorage.getItem('trove-pw') || ''; } catch {}
 $('pw').addEventListener('change', () => {
-  try { localStorage.setItem('links-pw', $('pw').value); } catch {}
+  try { localStorage.setItem('trove-pw', $('pw').value); } catch {}
 });
 
 async function api(path, body) {

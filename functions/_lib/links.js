@@ -33,7 +33,7 @@ function decode(s) {
 
 export async function getMeta(link, env) {
   if (link.kind === 'github') {
-    const h = { 'user-agent': 'links-site', accept: 'application/vnd.github+json' };
+    const h = { 'user-agent': 'trove', accept: 'application/vnd.github+json' };
     if (env.GITHUB_TOKEN) h.authorization = 'Bearer ' + env.GITHUB_TOKEN;
     const r = await fetch(`https://api.github.com/repos/${link.owner}/${link.repo}`, { headers: h });
     if (!r.ok) throw new Error('github repo lookup failed: ' + r.status);
@@ -41,7 +41,7 @@ export async function getMeta(link, env) {
     return { title: j.full_name, description: j.description || '' };
   }
   const r = await fetch(link.url, {
-    headers: { 'user-agent': 'Mozilla/5.0 (compatible; links-site)', accept: 'text/html' },
+    headers: { 'user-agent': 'Mozilla/5.0 (compatible; trove)', accept: 'text/html' },
     redirect: 'follow'
   });
   if (!r.ok) throw new Error('page fetch failed: ' + r.status);

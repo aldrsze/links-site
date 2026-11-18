@@ -1,7 +1,7 @@
 {
-  "name": "links",
-  "short_name": "links",
-  "description": "Add a link to the list in one paste.",
+  "name": "trove",
+  "short_name": "trove",
+  "description": "A trove of links worth finding again.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6f8fa",
