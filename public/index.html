@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>links</title>
+</head>
+<body>
+
+<h3>add link</h3>
+<div>
+  <input id="url" size="60" placeholder="https://github.com/owner/repo or any url">
+  <button id="check">check</button><br>
+  <label>password <input id="pw" type="password" size="20"></label>
+  <label>description (only if the page has none) <input id="manual" size="40"></label>
+</div>
+
+<pre id="status"></pre>
+
+<div id="review" hidden>
+  <h3>review</h3>
+  <div>
+    <label>section <select id="section"></select></label>
+    <label>or new section <input id="newSection" size="20"></label>
+  </div>
+  <div>
+    <label>link <input id="label" size="40" readonly></label><br>
+    <label>description <input id="desc" size="80"></label>
+  </div>
+  <pre id="bullet"></pre>
+  <pre id="diff"></pre>
+  <button id="pr">create pull request</button>
+  <button id="cancel">cancel</button>
+</div>
+
+<h3>list</h3>
+<button id="reload">reload</button>
+<pre id="list"></pre>
+
+<script>
+const $ = id => document.getElementById(id);
+const RAW = 'https://raw.githubusercontent.com/aldrsze/links/main/README.md';
+let link = null;
+
+const say = m => { $('status').textContent = m; };
+const section = () => $('newSection').value.trim() || $('section').value;
+
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-password': $('pw').value },
+    body: JSON.stringify(body)
+  });
+  const j = await r.json().catch(() => ({ error: 'bad response ' + r.status }));
+  if (!r.ok) throw Object.assign(new Error(j.error || r.status), { data: j });
+  return j;
+}
+
+function show(j) {
+  link = j.link;
+  $('label').value = j.link.label;
+  $('desc').value = j.description;
+  $('section').innerHTML = j.sections.map(s => `<option></option>`).join('');
+  [...$('section').options].forEach((o, i) => { o.textContent = o.value = j.sections[i]; });
+  $('section').value = j.section;
+  $('newSection').value = j.sections.includes(j.section) ? '' : j.section;
+  paint(j);
+  $('review').hidden = false;
+}
+function paint(j) {
+  $('bullet').textContent = j.bullet;
+  $('diff').textContent = 'section: ' + j.section + '\n\n' + j.diff;
+  let msg = j.ambiguous ? 'ai flagged the section as ambiguous. check it.\n' : '';
+  if (j.duplicates.length) {
+    msg += 'already listed:\n' + j.duplicates.map(d => `  [${d.section}] ${d.line}`).join('\n') + '\n';
+    msg += j.blocked ? 'same section: the pull request will be refused.' : 'other section only: allowed.';
+  }
+  say(msg || 'check the line, then create the pull request.');
+  $('pr').disabled = j.blocked;
+}
+
+$('check').onclick = async () => {
+  $('review').hidden = true;
+  try {
+    say('checking...');
+    show(await api('/api/preview', { url: $('url').value, manual: $('manual').value }));
+  } catch (e) { say('error: ' + e.message); }
+};
+
+// editing description or section only recomputes the diff, no ai call
+async function refresh() {
+  if (!link) return;
+  try {
+    const j = await api('/api/preview', { url: link.url, description: $('desc').value, section: section() });
+    paint(j);
+  } catch (e) { say('error: ' + e.message); }
+}
+$('section').onchange = () => { $('newSection').value = ''; refresh(); };
+$('newSection').onchange = refresh;
+$('desc').onchange = refresh;
+
+$('pr').onclick = async () => {
+  try {
+    say('creating pull request...');
+    const j = await api('/api/pr', { url: link.url, description: $('desc').value, section: section() });
+    say('pull request #' + j.number + ': ' + j.url);
+    $('review').hidden = true;
+    link = null;
+    $('url').value = '';
+    $('manual').value = '';
+  } catch (e) { say('error: ' + e.message); }
+};
+$('cancel').onclick = () => { $('review').hidden = true; link = null; say(''); };
+
+async function loadList() {
+  try {
+    const r = await fetch(RAW, { cache: 'no-store' });
+    $('list').textContent = r.ok ? await r.text() : 'error: ' + r.status;
+  } catch (e) { $('list').textContent = 'error: ' + e.message; }
+}
+$('reload').onclick = loadList;
+loadList();
+</script>
+</body>
+</html>
